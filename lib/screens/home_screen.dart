@@ -10,26 +10,62 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> tarefas = [];
   int _selectedIndex = 0;
 
-  Future<void> adicionarTarefa() async {
-    final resultado = await Navigator.pushNamed(context, '/chamado');
+  Future<void> adicionarOuEditarTarefa({Map<String, dynamic>? tarefa, int? index}) async {
+    final resultado = await Navigator.pushNamed(
+      context, 
+      '/chamado', 
+      arguments: tarefa, // Passa a tarefa para edição (ou null para nova)
+    );
+
     if (resultado != null) {
       setState(() {
-        tarefas.add({
-          'titulo': (resultado as Map<String, dynamic>)['titulo'],
-          'descricao': resultado['descricao'],
-          'dataEntrega': resultado['dataEntrega'],
-          'prioridade': resultado['prioridade'],
-          'status': 'pendente',
-        });
+        if (index != null) {
+          tarefas[index] = resultado as Map<String, dynamic>; // Atualiza a tarefa
+        } else {
+          tarefas.add({
+            ...resultado as Map<String, dynamic>,
+            'status': 'pendente', // Sempre começa como pendente
+            'dataFinalizacao': null, // Inicialmente sem data de finalização
+          });
+        }
       });
     }
   }
 
   void alterarStatusTarefa(int index) {
-    setState(() {
-      tarefas[index]['status'] =
-          tarefas[index]['status'] == 'pendente' ? 'finalizada' : 'pendente';
-    });
+    if (tarefas[index]['status'] == 'pendente') {
+      // Pergunta se deseja finalizar a tarefa
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Finalizar Tarefa"),
+            content: Text("Tem certeza que deseja finalizar esta tarefa?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context), 
+                child: Text("Cancelar"),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    tarefas[index]['status'] = 'finalizada';
+                    tarefas[index]['dataFinalizacao'] = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+                  });
+                  Navigator.pop(context);
+                },
+                child: Text("Finalizar"),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      setState(() {
+        tarefas[index]['status'] = 'pendente';
+        tarefas[index]['dataFinalizacao'] = null; // Remove a data de finalização ao reabrir a tarefa
+      });
+    }
   }
 
   List<Map<String, dynamic>> get tarefasFiltradas {
@@ -105,6 +141,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                  if (tarefa['dataFinalizacao'] != null) // Exibe a data de finalização apenas se houver
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5),
+                      child: Text(
+                        "Finalizada em: ${tarefa['dataFinalizacao']}",
+                        style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w500),
+                      ),
+                    ),
                 ],
               ),
               trailing: IconButton(
@@ -114,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onPressed: () => alterarStatusTarefa(index),
               ),
+              onTap: () => adicionarOuEditarTarefa(tarefa: tarefa, index: index), // Permite editar
             ),
           );
         },
@@ -135,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: adicionarTarefa,
+        onPressed: () => adicionarOuEditarTarefa(), // Nova tarefa
         child: Icon(Icons.add),
       ),
     );

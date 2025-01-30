@@ -11,11 +11,31 @@ class _ChamadoScreenState extends State<ChamadoScreen> {
   final _descricaoController = TextEditingController();
   DateTime? _dataEntrega;
   String _prioridade = "Média";
+  bool _modoEdicao = false; // Indica se está editando
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Verifica se há uma tarefa para edição
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null) {
+        setState(() {
+          _modoEdicao = true;
+          _tituloController.text = args['titulo'];
+          _descricaoController.text = args['descricao'];
+          _dataEntrega = DateFormat('dd/MM/yyyy').parse(args['dataEntrega']);
+          _prioridade = args['prioridade'];
+        });
+      }
+    });
+  }
 
   Future<void> _selecionarDataEntrega() async {
     DateTime? dataSelecionada = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _dataEntrega ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(Duration(days: 365)),
     );
@@ -47,7 +67,7 @@ class _ChamadoScreenState extends State<ChamadoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black87,
-      appBar: AppBar(title: Text("Novo Chamado")),
+      appBar: AppBar(title: Text(_modoEdicao ? "Editar Chamado" : "Novo Chamado")),
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -64,29 +84,15 @@ class _ChamadoScreenState extends State<ChamadoScreen> {
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 10),
-            Row(
-              children: [
-                Text("Entrega: ", style: TextStyle(color: Colors.white70)),
-                TextButton(
-                  onPressed: _selecionarDataEntrega,
-                  child: Text(
-                    _dataEntrega == null ? "Selecionar Data" : DateFormat('dd/MM/yyyy').format(_dataEntrega!),
-                    style: TextStyle(color: Colors.blueAccent),
-                  ),
-                ),
-              ],
+            TextButton(
+              onPressed: _selecionarDataEntrega,
+              child: Text(_dataEntrega == null ? "Selecionar Data" : DateFormat('dd/MM/yyyy').format(_dataEntrega!)),
             ),
             DropdownButton<String>(
               value: _prioridade,
               dropdownColor: Colors.black87,
-              items: ["Alta", "Média", "Baixa"].map((String prioridade) {
-                return DropdownMenuItem(value: prioridade, child: Text(prioridade, style: TextStyle(color: Colors.white)));
-              }).toList(),
-              onChanged: (valor) {
-                setState(() {
-                  _prioridade = valor!;
-                });
-              },
+              items: ["Alta", "Média", "Baixa"].map((p) => DropdownMenuItem(value: p, child: Text(p, style: TextStyle(color: Colors.white)))).toList(),
+              onChanged: (valor) => setState(() => _prioridade = valor!),
             ),
             SizedBox(height: 20),
             ElevatedButton(onPressed: _salvarChamado, child: Text("Salvar")),
