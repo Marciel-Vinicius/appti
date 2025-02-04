@@ -1,75 +1,75 @@
 import 'package:flutter/material.dart';
+import '../database/database_helper.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+
+  void _login() async {
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+
+    var user = await _dbHelper.getUser(email, password);
+    if (user != null) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Usuário ou senha inválidos!"), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
       body: Center(
         child: Padding(
-          padding: EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                Icons.flutter_dash,
-                size: 100,
-                color: Colors.blueAccent,
-              ),
-              SizedBox(height: 40),
-              TextField(
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.person, color: Colors.white70),
-                  hintText: "Email",
-                  hintStyle: TextStyle(color: Colors.white54),
-                  filled: true,
-                  fillColor: Colors.black45,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
+              Icon(Icons.person, size: 100, color: Colors.blueAccent),
               SizedBox(height: 20),
               TextField(
+                controller: _emailController,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  labelStyle: TextStyle(color: Colors.white),
+                  prefixIcon: Icon(Icons.email, color: Colors.blueAccent),
+                  filled: true,
+                  fillColor: Colors.white10,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _passwordController,
                 obscureText: true,
                 style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.lock, color: Colors.white70),
-                  hintText: "Senha",
-                  hintStyle: TextStyle(color: Colors.white54),
+                  labelText: "Senha",
+                  labelStyle: TextStyle(color: Colors.white),
+                  prefixIcon: Icon(Icons.lock, color: Colors.blueAccent),
                   filled: true,
-                  fillColor: Colors.black45,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
+                  fillColor: Colors.white10,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  // Redireciona para a tela principal (HomeScreen)
-                  Navigator.pushReplacementNamed(context, '/home');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                ),
-                child: Text(
-                  "LOGIN",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
+                onPressed: _login,
+                child: Text("LOGIN"),
               ),
-              SizedBox(height: 10),
               TextButton(
-                onPressed: () {},
-                child: Text(
-                  "Esqueceu a senha?",
-                  style: TextStyle(color: Colors.white54),
-                ),
+                onPressed: () => Navigator.pushNamed(context, '/register'),
+                child: Text("Criar Conta", style: TextStyle(color: Colors.blueAccent)),
               ),
             ],
           ),
