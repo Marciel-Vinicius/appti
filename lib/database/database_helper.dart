@@ -46,20 +46,29 @@ class DatabaseHelper {
     );
   }
 
+  // ✅ Método para cadastrar usuários  
   Future<int> registerUser(String email, String password) async {
     final db = await database;
-    return await db.insert('users', {'email': email, 'password': password},
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    return await db.insert(
+      'users',
+      {'email': email, 'password': password},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
+  // ✅ Método para verificar se um usuário existe no banco  
   Future<Map<String, dynamic>?> getUser(String email, String password) async {
     final db = await database;
-    List<Map<String, dynamic>> users = await db.query('users',
-        where: 'email = ? AND password = ?', whereArgs: [email, password]);
+    List<Map<String, dynamic>> users = await db.query(
+      'users',
+      where: 'email = ? AND password = ?',
+      whereArgs: [email, password],
+    );
 
     return users.isNotEmpty ? users.first : null;
   }
 
+  // ✅ Métodos para gerenciar tarefas  
   Future<int> addTask(Map<String, dynamic> task) async {
     final db = await database;
     return await db.insert('tasks', task);
@@ -72,8 +81,12 @@ class DatabaseHelper {
 
   Future<int> updateTaskStatus(int id, String newStatus) async {
     final db = await database;
-    return await db.update('tasks', {'status': newStatus},
-        where: 'id = ?', whereArgs: [id]);
+    return await db.update(
+      'tasks',
+      {'status': newStatus},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<int> deleteTask(int id) async {

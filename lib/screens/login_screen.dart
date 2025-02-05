@@ -15,6 +15,13 @@ class _LoginScreenState extends State<LoginScreen> {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Preencha todos os campos!"), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     var user = await _dbHelper.getUser(email, password);
     if (user != null) {
       Navigator.pushReplacementNamed(context, '/home');
@@ -28,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black87,
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(20),
@@ -38,29 +46,13 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 20),
               TextField(
                 controller: _emailController,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  labelStyle: TextStyle(color: Colors.white),
-                  prefixIcon: Icon(Icons.email, color: Colors.blueAccent),
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+                decoration: InputDecoration(labelText: "Email"),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Senha",
-                  labelStyle: TextStyle(color: Colors.white),
-                  prefixIcon: Icon(Icons.lock, color: Colors.blueAccent),
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+                decoration: InputDecoration(labelText: "Senha"),
               ),
               SizedBox(height: 20),
               ElevatedButton(
@@ -68,8 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text("LOGIN"),
               ),
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/register'),
-                child: Text("Criar Conta", style: TextStyle(color: Colors.blueAccent)),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/register');
+                },
+                child: Text("Criar Conta"),
               ),
             ],
           ),

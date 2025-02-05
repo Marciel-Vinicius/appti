@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'services/notification_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/chamado_screen.dart';
 import 'screens/agenda_screen.dart';
 import 'screens/register_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init(); // Inicializa as notificações
   runApp(MyApp());
 }
 
@@ -15,16 +18,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark, // Deixa o app em modo escuro por padrão
-        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        primaryColor: Colors.blueAccent,
         scaffoldBackgroundColor: Colors.black87,
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueAccent,
-            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.blueAccent,
+          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.blueAccent,
         ),
       ),
       initialRoute: '/',
