@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 7, // Aumentamos a versão do banco para aplicar a correção
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE users (
@@ -38,37 +38,42 @@ class DatabaseHelper {
             titulo TEXT,
             descricao TEXT,
             dataEntrega TEXT,
+            horaEntrega TEXT,
             prioridade TEXT,
-            status TEXT DEFAULT 'pendente'
+            status TEXT DEFAULT 'pendente',
+            finalizadaEm TEXT
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 7) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              email TEXT UNIQUE,
+              password TEXT
+            )
+          ''');
+        }
       },
     );
   }
 
-  // ✅ Método para cadastrar usuários  
   Future<int> registerUser(String email, String password) async {
     final db = await database;
-    return await db.insert(
-      'users',
-      {'email': email, 'password': password},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    return await db.insert('users', {'email': email, 'password': password});
   }
 
-  // ✅ Método para verificar se um usuário existe no banco  
   Future<Map<String, dynamic>?> getUser(String email, String password) async {
     final db = await database;
-    List<Map<String, dynamic>> users = await db.query(
+    List<Map<String, dynamic>> result = await db.query(
       'users',
       where: 'email = ? AND password = ?',
       whereArgs: [email, password],
     );
-
-    return users.isNotEmpty ? users.first : null;
+    return result.isNotEmpty ? result.first : null;
   }
 
-  // ✅ Métodos para gerenciar tarefas  
   Future<int> addTask(Map<String, dynamic> task) async {
     final db = await database;
     return await db.insert('tasks', task);
@@ -81,16 +86,7 @@ class DatabaseHelper {
 
   Future<int> updateTaskStatus(int id, String newStatus) async {
     final db = await database;
-    return await db.update(
-      'tasks',
-      {'status': newStatus},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<int> deleteTask(int id) async {
-    final db = await database;
-    return await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    String finalizadaEm = newStatus == 'finalizada' ? DateTime.now().toString() : "";
+    return await db.update('tasks', {'status': newStatus, 'finalizadaEm': finalizadaEm}, where: 'id = ?', whereArgs: [id]);
   }
 }
