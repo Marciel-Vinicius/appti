@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'services/notification_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/chamado_screen.dart';
-import 'screens/agenda_screen.dart';
 import 'screens/register_screen.dart';
 
 void main() async {
@@ -33,8 +31,6 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
-        '/chamado': (context) => ChamadoScreen(),
-        '/agenda': (context) => AgendaScreen(),
         '/register': (context) => RegisterScreen(),
       },
     );
