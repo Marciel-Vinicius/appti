@@ -7,17 +7,22 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String? _setorSelecionado;
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
+  final List<String> _setores = ["Suporte", "Desenvolvimento", "Infraestrutura", "Administrativo"];
+
   void _registerUser() async {
+    String nomeCompleto = _nomeController.text.trim();
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (nomeCompleto.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || _setorSelecionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Preencha todos os campos!"), backgroundColor: Colors.red),
       );
@@ -32,7 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
-      await _dbHelper.registerUser(email, password);
+      await _dbHelper.registerUser(nomeCompleto, _setorSelecionado!, email, password);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Usuário cadastrado com sucesso!"), backgroundColor: Colors.green),
       );
@@ -54,6 +59,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            TextField(
+              controller: _nomeController,
+              decoration: InputDecoration(labelText: "Nome Completo"),
+            ),
+            SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(labelText: "Setor"),
+              value: _setorSelecionado,
+              items: _setores.map((setor) {
+                return DropdownMenuItem(value: setor, child: Text(setor));
+              }).toList(),
+              onChanged: (valor) {
+                setState(() {
+                  _setorSelecionado = valor;
+                });
+              },
+            ),
+            SizedBox(height: 10),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(labelText: "Email"),

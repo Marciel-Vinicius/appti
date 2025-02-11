@@ -6,7 +6,7 @@ import 'screens/register_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(); // Inicializa as notificações
+  await NotificationService.init();
   runApp(MyApp());
 }
 
@@ -30,7 +30,6 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
         '/register': (context) => RegisterScreen(),
       },
     );
