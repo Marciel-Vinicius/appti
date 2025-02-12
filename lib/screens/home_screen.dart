@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../database/database_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   final String emailUsuario;
@@ -12,232 +11,205 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
   List<Map<String, dynamic>> tarefas = [];
-  String nomeUsuario = "";
-  String setorUsuario = "";
   String filtroSelecionado = "Todas";
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-    _loadTasks();
-  }
-
-  void _loadUserData() async {
-    var user = await _dbHelper.getUserByEmail(widget.emailUsuario);
-    if (user != null) {
-      setState(() {
-        nomeUsuario = user['nomeCompleto'];
-        setorUsuario = user['setor'];
-      });
-    }
-  }
-
-  void _loadTasks() async {
-    List<Map<String, dynamic>> loadedTasks = await _dbHelper.getTasks();
-    List<Map<String, dynamic>> tasksCopy = List<Map<String, dynamic>>.from(loadedTasks);
-
-    if (filtroSelecionado == "Pendentes") {
-      tasksCopy = tasksCopy.where((t) => t['status'] == 'pendente').toList();
-    } else if (filtroSelecionado == "Finalizadas") {
-      tasksCopy = tasksCopy.where((t) => t['status'] == 'finalizada').toList();
-    }
-
-    tasksCopy.sort((a, b) {
-      const prioridadeOrdem = {"Alta": 1, "Média": 2, "Baixa": 3};
-      return prioridadeOrdem[a['prioridade']]!.compareTo(prioridadeOrdem[b['prioridade']]!);
-    });
-
+  void _adicionarTarefa(String titulo, DateTime dataEntrega) {
     setState(() {
-      tarefas = tasksCopy;
+      tarefas.add({
+        'titulo': titulo,
+        'dataEntrega': dataEntrega,
+        'finalizada': false,
+      });
     });
   }
 
-  Future<void> _finalizarTarefa(int id) async {
-    bool confirmar = await showDialog(
+  void _confirmarFinalizacaoTarefa(int index) {
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Finalizar Tarefa"),
-        content: Text("Tem certeza que deseja marcar esta tarefa como finalizada?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text("Cancelar"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text("Finalizar", style: TextStyle(color: Colors.green)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmar) {
-      await _dbHelper.updateTaskStatus(id, "finalizada");
-      _loadTasks();
-    }
-  }
-
-  Color _corPrioridade(String prioridade) {
-    switch (prioridade) {
-      case "Alta":
-        return Colors.redAccent;
-      case "Média":
-        return Colors.orangeAccent;
-      case "Baixa":
-        return Colors.greenAccent;
-      default:
-        return Colors.blueGrey;
-    }
-  }
-
-  Widget _buildTaskCard(Map<String, dynamic> tarefa) {
-    return Card(
-      color: Colors.grey[850],
-      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        leading: Container(
-          width: 10,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: _corPrioridade(tarefa['prioridade']),
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
-        title: Text(
-          tarefa['titulo'],
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(tarefa['descricao'], style: TextStyle(color: Colors.white70)),
-            SizedBox(height: 5),
-            Text(
-              "Entrega: ${tarefa['dataEntrega']} às ${tarefa['horaEntrega']}",
-              style: TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-            Text(
-              "Prioridade: ${tarefa['prioridade']}",
-              style: TextStyle(color: _corPrioridade(tarefa['prioridade']), fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(Icons.edit, color: Colors.yellow),
-              onPressed: () {}, // Implementar edição depois
-            ),
-            IconButton(
-              icon: Icon(Icons.check, color: Colors.green),
-              onPressed: () => _finalizarTarefa(tarefa['id']),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavbar() {
-    return Container(
-      color: Colors.blueGrey[900],
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: ["Todas", "Pendentes", "Finalizadas"].map((filtro) {
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                filtroSelecionado = filtro;
-              });
-              _loadTasks();
-            },
-            child: Padding(
-              padding: EdgeInsets.all(10),
-              child: Text(
-                filtro,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: filtroSelecionado == filtro ? Colors.blueAccent : Colors.white70),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  void _adicionarTarefa() {
-    TextEditingController _tituloController = TextEditingController();
-    TextEditingController _descricaoController = TextEditingController();
-    DateTime? dataEntrega;
-    TimeOfDay? horaEntrega;
-    String prioridade = 'Média';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Nova Tarefa", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-              SizedBox(height: 10),
-              TextField(
-                controller: _tituloController,
-                decoration: InputDecoration(labelText: "Título", filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                style: TextStyle(color: Colors.white),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () async {
-                  DateTime? selectedDate = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2100));
-                  if (selectedDate != null) {
-                    setState(() {
-                      dataEntrega = selectedDate;
-                    });
-                  }
-                },
-                child: Text(dataEntrega == null ? "Selecionar Data" : DateFormat('dd/MM/yyyy').format(dataEntrega!), style: TextStyle(color: Colors.blueAccent)),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  TimeOfDay? selectedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-                  if (selectedTime != null) {
-                    setState(() {
-                      horaEntrega = selectedTime;
-                    });
-                  }
-                },
-                child: Text(horaEntrega == null ? "Selecionar Hora" : "${horaEntrega!.hour}:${horaEntrega!.minute}", style: TextStyle(color: Colors.blueAccent)),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await _dbHelper.addTask({'titulo': _tituloController.text, 'descricao': _descricaoController.text, 'dataEntrega': DateFormat('dd/MM/yyyy').format(dataEntrega!), 'horaEntrega': "${horaEntrega!.hour}:${horaEntrega!.minute}", 'prioridade': prioridade, 'status': 'pendente'});
-
-                  _loadTasks();
-                  Navigator.pop(context);
-                },
-                child: Text("Adicionar Tarefa"),
-              ),
-            ],
-          ),
+        return AlertDialog(
+          title: Text("Finalizar Tarefa"),
+          content: Text("Tem certeza que deseja marcar esta tarefa como finalizada?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _finalizarTarefa(index);
+                Navigator.pop(context);
+              },
+              child: Text("Finalizar"),
+            ),
+          ],
         );
       },
     );
   }
 
+  void _finalizarTarefa(int index) {
+    setState(() {
+      tarefas[index]['finalizada'] = !tarefas[index]['finalizada'];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<Map<String, dynamic>> tarefasFiltradas = tarefas.where((tarefa) {
+      if (filtroSelecionado == "Pendentes") return !tarefa['finalizada'];
+      if (filtroSelecionado == "Finalizadas") return tarefa['finalizada'];
+      return true;
+    }).toList();
+
     return Scaffold(
-      body: Column(children: [_buildNavbar(), Expanded(child: ListView(children: tarefas.map((tarefa) => _buildTaskCard(tarefa)).toList()))]),
-      floatingActionButton: FloatingActionButton(onPressed: _adicionarTarefa, backgroundColor: Colors.blueAccent, child: Icon(Icons.add, color: Colors.white)),
+      appBar: AppBar(
+        title: Text("Bem-vindo, ${widget.emailUsuario}"),
+      ),
+      body: Column(
+        children: [
+          _buildNavbar(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: tarefasFiltradas.length,
+              itemBuilder: (context, index) {
+                var tarefa = tarefasFiltradas[index];
+                return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: ListTile(
+                    title: Text(tarefa['titulo']),
+                    subtitle: Text(
+                      "Entrega: ${DateFormat('dd/MM/yyyy HH:mm').format(tarefa['dataEntrega'])}",
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        tarefa['finalizada'] ? Icons.check_circle : Icons.circle_outlined,
+                        color: tarefa['finalizada'] ? Colors.green : Colors.grey,
+                      ),
+                      onPressed: () => _confirmarFinalizacaoTarefa(index),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _mostrarDialogoAdicionarTarefa(context),
+        child: Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildNavbar() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavbarButton("Todas"),
+          _buildNavbarButton("Pendentes"),
+          _buildNavbarButton("Finalizadas"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavbarButton(String texto) {
+    bool selecionado = filtroSelecionado == texto;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          filtroSelecionado = texto;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        decoration: BoxDecoration(
+          color: selecionado ? Colors.blue : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          texto,
+          style: TextStyle(
+            color: selecionado ? Colors.white : Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _mostrarDialogoAdicionarTarefa(BuildContext context) {
+    TextEditingController tituloController = TextEditingController();
+    DateTime? dataSelecionada;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Adicionar Tarefa"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tituloController,
+                decoration: InputDecoration(labelText: "Título"),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  DateTime? data = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (data != null) {
+                    TimeOfDay? hora = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+                    if (hora != null) {
+                      setState(() {
+                        dataSelecionada = DateTime(
+                          data.year,
+                          data.month,
+                          data.day,
+                          hora.hour,
+                          hora.minute,
+                        );
+                      });
+                    }
+                  }
+                },
+                child: Text("Selecionar Data e Hora"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (tituloController.text.isNotEmpty && dataSelecionada != null) {
+                  _adicionarTarefa(tituloController.text, dataSelecionada!);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text("Adicionar"),
+            ),
+          ],
+        );
+      },
     );
   }
 }
